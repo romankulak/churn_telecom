@@ -1,0 +1,39 @@
+---
+title: "Telecom-Churn.Rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+df <- read.csv('Churn_telecom_dataset.csv')
+df$churn <- ifelse(df$churn=='True',1,0)
+library(survival)
+df$survival <- Surv(df$total.day.minutes, df$churn==1)
+```
+
+
+## Fit a cox proportional hazards model
+
+```{r}
+s <- with(df, Surv(account.length,churn))
+model <- coxph(s ~ total.day.charge + customer.service.calls, data=df[, -4])
+summary(model)
+plot(survfit(model), col='blue', xlab = 'Total days.', ylab = 'Percent Surviving')
+title(main = 'Charge and customer support calls')
+```
+
+
+## Line in the middle represents the best estimate of the percent of customers surviving at each time interval. In respect to day charge
+```{r}
+model <- coxph(s ~ total.day.charge + strata(customer.service.calls <= 3), data=df[, -4])
+summary(model)
+plot(survfit(model), col=c("blue", "red"),xlab = 'Total days.', ylab = 'Percent Surviving')
+legend(20, .3, legend = c('service calls > 3', 'service calls < 3'), col = c('red', 'blue'), lty = c(1, 1))
+```
+
+
+## Number or customers surviving in respect to the service calls.
